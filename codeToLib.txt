@@ -1,0 +1,44 @@
+#include <Windows.h>
+#include <iostream>
+#include <string>
+#include <vector>    
+#include <thread>
+
+bool stop = false;
+
+void PrintFileLoc(const std::wstring name, const std::wstring location = L"C:") {
+
+    WIN32_FIND_DATA file = {};
+
+    HANDLE handle = FindFirstFileW((location + L"\\*").c_str(), &file);
+
+    if (!stop) {
+        if (handle != INVALID_HANDLE_VALUE) {
+            std::vector<std::wstring> pathHolder;
+
+            do {
+                if (file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                    if ((!lstrcmpW(file.cFileName, L".") || !lstrcmpW(file.cFileName, L".."))) continue;
+
+                if (!lstrcmpW(file.cFileName, name.c_str())) {
+                    stop = true;
+                    std::wcout << location + L"\\" + name << std::endl;
+                    break;
+                }
+                if (file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+                    //std::wcout << location + L"\\" + file.cFileName  << std::endl;
+                    pathHolder.push_back(location + L"\\" + file.cFileName);
+                }
+
+            } while (FindNextFileW(handle, &file));
+
+            FindClose(handle);
+
+
+
+            for (std::vector<std::wstring>::iterator i = pathHolder.begin(), end = pathHolder.end(); i != end; ++i) {
+                PrintFileLoc(name, *i);
+            }
+        }
+    }
+}
